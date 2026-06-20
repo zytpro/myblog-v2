@@ -1,0 +1,13 @@
+node_modules/
+dist/
+target/
+*.log
+uploads/
+.claude/
+.idea/
+*.zip
+apache-maven-*/
+jdk-*/
+.env
+application-local.yml
+**/application-local.yml

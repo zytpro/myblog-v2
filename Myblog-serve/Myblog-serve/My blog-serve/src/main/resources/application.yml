@@ -1,0 +1,99 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/myblog
+    username: root
+    password: ${DB_PASSWORD:changeme}
+#    username: myblog
+    initialization-mode: never
+
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    database: 0
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 200
+        max-idle: 10
+        min-idle: 0
+        max-wait: -1ms
+  servlet:
+    filter.dispatcher-types: REQUEST
+    multipart:
+      max-file-size: 512MB
+      max-request-size: 512MB
+  web:
+    resources:
+      static-locations:
+        - classpath:/static/
+        - classpath:/public/
+        - file:./uploads/
+      cache:
+        period: 0
+server:
+  port: 4000
+  tomcat:
+    max-swallow-size: -1
+
+#logging:
+#  level:
+#    root: INFO
+#    org.springframework: WARN # Spring 的详细调试信息
+#    org.apache.catalina: ERROR
+#    org.hibernate: ERROR
+#    com.zaxxer.hikari: ERROR
+#    cn.dev33: DEBUG # Sa-Token 日志调试
+#    com.tzy: DEBUG # 你的项目包名
+
+  main:
+    allow-bean-definition-overriding: true
+
+sa-token:
+  token-name: Authorization
+  timeout: 7200  # 2小时绝对过期时间
+  active-timeout: 1800  # 30分钟活跃超时
+  is-concurrent: true
+  is-share: true
+  token-style: uuid
+  jwt-secret-key: myblog-secret-key-2024-secure-token-jwt
+  is-print: off
+
+
+file:
+  upload:
+    path:
+      video: ./uploads/video/
+      images: ./uploads/images/
+      music: ./uploads/music/
+      lrc: ./uploads/lrc/
+      carousel: ./uploads/Carousel/
+      loveroom: ./uploads/Loveroom/
+      lifetime: ./uploads/Lifetime/
+
+
+
+mybatis-plus:
+  mapper-locations: classpath:/mapper/*Mapper.xml
+  type-aliases-package: com.myblog.entity
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    banner: false
+
+# PageHelper 配置
+pagehelper:
+  helper-dialect: mysql
+  reasonable: true
+  support-methods-arguments: true
+  params: count=countSql
+
+openrouter:
+  api:
+    key: ${OPENROUTER_API_KEY:}
+    url: https://openrouter.ai/api/v1/chat/completions
+    model: deepseek/deepseek-chat:free
+
+
+
+
