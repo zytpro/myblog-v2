@@ -43,12 +43,14 @@
             <!-- 个人信息卡片 -->
             <div class="profile-card">
               <div class="profile-avatar-wrap">
+                <div class="avatar-ring"></div>
                 <el-avatar
-                    :size="100"
+                    :size="84"
                     :src="userInfo.avatar || '/icon/001.png'"
                     class="user-avatar"
+                    aria-label="用户头像"
                 >
-                  <img src="https://cube.elemecdn.com/e/fd/0fc7d20532fdaf769a25683617711png.png"/>
+                  <img src="https://cube.elemecdn.com/e/fd/0fc7d20532fdaf769a25683617711png.png" alt=""/>
                 </el-avatar>
               </div>
 
@@ -60,36 +62,34 @@
               <div class="profile-stats">
                 <div class="stat-item">
                   <span class="stat-number">{{ articlesForCards.length }}</span>
-                  <span class="stat-label">ARTICLES</span>
+                  <span class="stat-label">文章</span>
                 </div>
+                <div class="stat-divider"></div>
                 <div class="stat-item">
                   <span class="stat-number">{{ categories.length }}</span>
-                  <span class="stat-label">CATEGORIES</span>
+                  <span class="stat-label">分类</span>
                 </div>
+              </div>
+
+              <div class="profile-tags" v-if="categories.length">
+                <span class="profile-tag" v-for="cat in categories.slice(0, 4)" :key="cat.id || cat">
+                  {{ cat.name || cat }}
+                </span>
               </div>
             </div>
 
-
             <div class="social-links">
-              <a href="#" class="social-link qq-link" title="QQ">
-                <el-icon size="20">
-                  <ChatDotRound/>
-                </el-icon>
+              <a href="#" class="social-link" title="QQ" aria-label="QQ">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.5 13.5c-.8.8-1.7 1.2-2.5 1.2-.5 0-.9-.2-1.2-.5l-.8-.8c-.3-.3-.8-.3-1.1 0l-.8.8c-.3.3-.7.5-1.2.5-.8 0-1.7-.4-2.5-1.2-1.2-1.2-1.9-2.8-1.9-4.5 0-.9.7-1.7 1.7-1.7.4 0 .8.2 1.1.4.5.5.8 1.3.8 2.1 0 .3 0 .6-.1.9-.1.2 0 .5.2.6.5.3 1.2.5 1.9.5s1.4-.2 1.9-.5c.2-.1.3-.4.2-.6-.1-.3-.1-.6-.1-.9 0-.8.3-1.6.8-2.1.3-.3.7-.4 1.1-.4 1 0 1.7.8 1.7 1.7 0 1.7-.7 3.3-1.9 4.5z"/></svg>
               </a>
-              <a href="#" class="social-link douyin-link" title="抖音">
-                <el-icon size="20">
-                  <VideoPlay/>
-                </el-icon>
+              <a href="#" class="social-link" title="微信" aria-label="微信">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M8.5 11a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm5 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm-6.8 4.5c-2.3 0-4.2-1.7-4.2-3.8 0-1.4.8-2.6 2-3.3-.1-.3-.1-.6-.1-.9C4.4 4.4 7.8 2 12 2c4.2 0 7.6 3 7.6 6.7 0 .6-.1 1.2-.3 1.8 2.1.6 3.7 2.5 3.7 4.7 0 2.8-2.6 5-5.8 5-.6 0-1.2-.1-1.8-.3-1 .6-2.3.9-3.6.9-2.1 0-4-.8-5.3-2-.7.1-1.4.2-2 .2z"/></svg>
               </a>
-              <a href="#" class="social-link weibo-link" title="微博">
-                <el-icon size="20">
-                  <Share/>
-                </el-icon>
+              <a href="#" class="social-link" title="微博" aria-label="微博">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M10.1 17.3c-3.5.6-6.1-.5-5.9-2.5.2-1.9 3.1-4 6.6-4.6 3.5-.6 6.1.5 5.9 2.5-.2 1.9-3.1 4-6.6 4.6zm5.2-5.1c-.4-.1-.6-.6-.4-.9.7-1.2.7-2.5.2-3.3-.2-.4 0-.8.4-.9.5-.2 1 .1 1.2.6.6 1.3.6 3 0 4.3-.2.4-.7.5-1.4.2zm2.1-3.5c-.3-.2-.5-.6-.3-.9 1.1-1.8 1.2-3.6.5-4.7-.2-.4 0-.8.5-1 .5-.2 1 0 1.3.5 1 1.7 1 3.9-.2 5.9-.3.4-.8.5-1.8.2zM12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2z"/></svg>
               </a>
-              <a href="#" class="social-link github-link" title="GitHub">
-                <el-icon size="20">
-                  <Link/>
-                </el-icon>
+              <a href="#" class="social-link" title="GitHub" aria-label="GitHub">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M12 2C6.5 2 2 6.5 2 12c0 4.4 2.9 8.2 6.8 9.5.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.2-3.4-1.2-.5-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.6 2.4 1.1 3 .8.1-.7.3-1.1.6-1.4-2.2-.2-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.3-.5-1.3.1-2.7 0 0 .8-.3 2.7 1 .8-.2 1.6-.3 2.5-.3s1.7.1 2.5.3c1.9-1.3 2.7-1 2.7-1 .6 1.4.2 2.4.1 2.7.7.7 1 1.6 1 2.7 0 3.9-2.4 4.8-4.6 5 .4.3.7.9.7 1.9v2.8c0 .3.2.6.7.5C19.1 20.2 22 16.4 22 12c0-5.5-4.5-10-10-10z"/></svg>
               </a>
             </div>
           </div>
@@ -138,8 +138,7 @@
               :key="a.id"
               :article="a"
               :index="idx"
-              class="fade-in-up"
-              :style="{ animationDelay: `${idx * 0.1}s` }"
+              :class="['fade-in-up', `stagger-${Math.min(idx, 5) + 1}`]"
             />
           </div>
 
@@ -161,16 +160,13 @@
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useBlogStore } from '../stores/blog'
+import { useScrollReveal } from '../utills/scrollReveal.js'
 import ArticleCard from '../components/ArticleCard.vue'
 import Carousel from '../components/Carousel.vue'
 import MusicPlayer from '../components/MusicPlayer.vue'
 import request from '../utills/request.js'
-import { 
-  ChatDotRound, 
-  VideoPlay, 
-  Share, 
-  Link 
-} from '@element-plus/icons-vue'
+
+const { refresh: refreshScrollReveal } = useScrollReveal()
 
 const router = useRouter()
 const blogStore = useBlogStore()
@@ -293,6 +289,7 @@ const fetchArticlesSmart = async (forceRefresh = false) => {
     if (cached) {
       articles.value = cached
       articlesLoading.value = false
+      setTimeout(refreshScrollReveal, 50)
       if (!isRefreshing.value) fetchArticlesFromApi(true)
       return
     }
@@ -322,6 +319,7 @@ const fetchArticlesFromApi = async (isSilentRefresh = false) => {
       }))
       articles.value = processedArticles
       if (!isSilentRefresh) saveCachedArticles(processedArticles)
+      refreshScrollReveal()
     }
   } catch (e) {
     if (!isSilentRefresh) articlesError.value = e?.message || '网络异常'
@@ -617,72 +615,196 @@ onMounted(async () => {
 }
 
 .jiujiu-aside-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(160deg, #0d1b2a 0%, #1b2838 40%, #162447 100%);
+  border-radius: 18px;
+  padding: 0;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05);
   margin-bottom: 16px;
-  color: #fff;
+  color: #e0e0e0;
+  overflow: hidden;
+  position: relative;
 }
 
+/* 星光 */
+.jiujiu-aside-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 60% 10%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 80% 50%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1.5px 1.5px at 15% 70%, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1px 1px at 50% 85%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 90% 90%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1.5px 1.5px at 35% 45%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 70% 30%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 45% 65%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 85% 75%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1.5px 1.5px at 25% 90%, rgba(255,255,255,0.5), transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ---- 个人信息卡 ---- */
 .profile-card {
   text-align: center;
+  padding: 28px 20px 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.profile-avatar-wrap {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 16px;
+}
+
+.avatar-ring {
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: linear-gradient(135deg, #667eea, #764ba2, #f093fb, #667eea) border-box;
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: ringSpin 4s linear infinite;
+}
+
+@keyframes ringSpin {
+  to { transform: rotate(360deg); }
+}
+
+.user-avatar {
+  border: 3px solid rgba(255,255,255,0.15);
+  box-shadow: 0 0 20px rgba(100,140,255,0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.user-avatar:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 30px rgba(100,140,255,0.3);
 }
 
 .profile-name {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
-  margin-bottom: 5px;
+  color: #e8e8f0;
+  margin: 0 0 6px;
+  letter-spacing: 0.5px;
 }
 
 .profile-signature {
   font-size: 13px;
-  opacity: 0.9;
+  color: rgba(255,255,255,0.45);
+  margin: 0;
+  line-height: 1.6;
+  padding: 0 8px;
 }
 
+/* 统计数据 */
 .profile-stats {
   display: flex;
-  justify-content: space-around;
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  align-items: center;
+  justify-content: center;
+  margin-top: 18px;
+  padding: 14px 0;
+  background: rgba(255,255,255,0.04);
+  border-radius: 12px;
+}
+
+.stat-item {
+  flex: 1;
+  text-align: center;
+  cursor: default;
+  transition: transform 0.2s ease;
+}
+
+.stat-item:hover {
+  transform: translateY(-1px);
+}
+
+.stat-divider {
+  width: 1px;
+  height: 28px;
+  background: rgba(255,255,255,0.08);
+  flex-shrink: 0;
 }
 
 .stat-number {
-  font-size: 18px;
-  font-weight: bold;
   display: block;
+  font-size: 22px;
+  font-weight: 700;
+  color: #d0d8f0;
+  line-height: 1.2;
 }
 
 .stat-label {
-  font-size: 12px;
-  opacity: 0.8;
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 0.5px;
 }
 
+/* 分类标签 */
+.profile-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 16px;
+  padding: 0 4px;
+}
+
+.profile-tag {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.5);
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: all 0.2s;
+}
+
+.profile-tag:hover {
+  color: rgba(255,255,255,0.8);
+  border-color: rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.1);
+}
+
+/* 社交链接 */
 .social-links {
   display: flex;
-  justify-content: space-around;
-  padding-top: 15px;
-  margin-top: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  position: relative;
+  z-index: 1;
 }
 
 .social-link {
   width: 36px;
   height: 36px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.4);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s;
+  transition: all 0.25s;
 }
 
 .social-link:hover {
-  transform: translateY(-3px);
-  background: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+  color: #fff;
 }
+
+.social-link[title="QQ"]:hover { background: #12b7f5; }
+.social-link[title="微信"]:hover { background: #07c160; }
+.social-link[title="微博"]:hover { background: #e6162d; }
+.social-link[title="GitHub"]:hover { background: #24292e; }
 
 .announcement {
   padding: 15px;
@@ -823,140 +945,5 @@ onMounted(async () => {
   .printer-content h3 {
     font-size: 14px;
   }
-}
-
-.profile-card {
-  text-align: center;
-  padding: 10px 0;
-  position: relative;
-  z-index: 1;
-}
-
-/* 头像区域 */
-.profile-avatar-wrap {
-  margin-bottom: 15px;
-  position: relative;
-  display: inline-block;
-}
-
-.user-avatar {
-  border: 4px solid rgba(255, 255, 255, 0.3); /* 半透明白边框 */
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.2); /* 发光效果 */
-  transition: all 0.5s ease-in-out;
-  cursor: pointer;
-  background: #fff;
-}
-
-/* 头像悬停旋转动画 */
-.user-avatar:hover {
-  transform: rotate(360deg) scale(1.05);
-  border-color: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
-}
-
-.profile-info {
-  margin-bottom: 20px;
-}
-
-.profile-name {
-  font-size: 32px;
-  font-weight: 800;
-  margin-bottom: 8px;
-  background: linear-gradient(135deg, #fee140 0%, #fa709a 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: none;
-  letter-spacing: 1.5px;
-  background-size: 200% auto;
-  animation: gradientText 3s linear infinite;
-}
-
-.profile-signature {
-  font-size: 14px;
-  background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-
-  margin: 0;
-  font-family: 'Fredoka', sans-serif;
-  padding: 0 10px;
-  line-height: 1.5;
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-}
-
-@keyframes gradientText {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-.profile-stats {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  margin-top: 15px;
-  padding: 15px 0;
-  position: relative;
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 8px;
-}
-
-.stat-item {
-  flex: 1;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-}
-
-.stat-item:first-child::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  height: 60%;
-  width: 1px;
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.stat-item:hover {
-  transform: translateY(-2px);
-}
-
-.stat-item:hover .stat-number {
-  color: #fff;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
-}
-
-.stat-number {
-  display: block;
-  font-size: 20px;
-  font-weight: 800;
-  color: #ffffff;
-  margin-bottom: 4px;
-  font-family: 'Fredoka', sans-serif;
-}
-
-.stat-label {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
-  font-weight: 500;
-  letter-spacing: 1px;
-  text-transform: uppercase;
 }
 </style>

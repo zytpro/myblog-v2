@@ -3,6 +3,9 @@
       class="article-card"
       elevation="0"
       :ripple="false"
+      ref="cardRef"
+      @mousemove="onMouseMove"
+      @mouseleave="onMouseLeave"
       @click="viewArticle"
   >
     <!-- 图片区域 -->
@@ -37,26 +40,45 @@
 </template>
 
 <script setup>
-import {useRouter} from 'vue-router';
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 const props = defineProps({
   article: {
     type: Object,
     required: true
   }
-});
+})
 
-const router = useRouter();
+const router = useRouter()
+const cardRef = ref(null)
 
 const viewArticle = () => {
-  router.push(`/article/${props.article.id}`);
-};
+  router.push(`/article/${props.article.id}`)
+}
+
+const onMouseMove = (e) => {
+  if (!cardRef.value) return
+  const rect = cardRef.value.$el.getBoundingClientRect()
+  const x = e.clientX - rect.left
+  const y = e.clientY - rect.top
+  const centerX = rect.width / 2
+  const centerY = rect.height / 2
+  const rotateX = ((y - centerY) / centerY) * -8
+  const rotateY = ((x - centerX) / centerX) * 8
+  cardRef.value.$el.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-5px)`
+}
+
+const onMouseLeave = () => {
+  if (!cardRef.value) return
+  cardRef.value.$el.style.transform = 'perspective(800px) rotateX(0deg) rotateY(0deg) translateY(0px)'
+}
 
 const formatDate = (dateStr) => {
-  if (!dateStr) return '';
-  const date = new Date(dateStr);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-};
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
 </script>
 
 <style scoped>
@@ -67,14 +89,16 @@ const formatDate = (dateStr) => {
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: box-shadow 0.4s ease, border-color 0.4s ease;
   border: 1px solid #eee;
   height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.15s ease-out, box-shadow 0.4s ease;
+  will-change: transform;
 }
 
 .article-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(118, 75, 162, 0.15);
   border-color: transparent;
 }
 
@@ -93,7 +117,7 @@ const formatDate = (dateStr) => {
 }
 
 .article-card:hover .article-cover {
-  transform: scale(1.05);
+  transform: scale(1.08);
 }
 
 .article-info {
@@ -101,6 +125,8 @@ const formatDate = (dateStr) => {
   display: flex;
   flex-direction: column;
   flex: 1;
+  transform-style: preserve-3d;
+  transition: transform 0.15s ease-out;
 }
 
 .article-meta {

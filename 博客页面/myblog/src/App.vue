@@ -5,6 +5,7 @@ import {useRouter} from 'vue-router'
 import {useAuthStore} from './stores/auth.js'
 import {startTokenAutoRefresh, stopTokenAutoRefresh} from './utills/auth.js'
 import userActivityManager from './utills/userActivityManager.js'
+import CursorParticles from './components/CursorParticles.vue'
 
 const router = useRouter()
 const drawer = ref(false)
@@ -254,8 +255,9 @@ onUnmounted(() => {
     </v-navigation-drawer>
 
     <v-main class="modern-main" style="padding-top: 0 !important;">
-      <router-view/>
+      <router-view />
     </v-main>
+    <CursorParticles />
     <v-footer class="jiujiu-footer" padless v-if="$route.meta.hideLayout !== true">
       <div class="footer-waves-container">
         <div id="footerWave1"></div>

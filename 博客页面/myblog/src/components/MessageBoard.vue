@@ -1,582 +1,374 @@
 <template>
-  <div class="page-wrapper">
-    <!-- 背景气泡动画 -->
-    <ul class="bg-bubbles">
-      <li v-for="n in 10" :key="n"></li>
-    </ul>
+  <div class="danmaku-page">
+    <!-- 温柔渐变背景 -->
+    <div class="bg-blob bg-blob-1"></div>
+    <div class="bg-blob bg-blob-2"></div>
+    <div class="bg-blob bg-blob-3"></div>
 
-    <div class="message-container">
-      <!-- 头部标题 -->
-      <div class="message-header">
-        <h1 class="title">Message Board</h1>
-        <p class="subtitle">寄托思念，留下祝福</p>
+    <div class="danmaku-layout">
+      <div class="danmaku-header">
+        <h1 class="header-title">留言弹幕墙</h1>
+        <p class="header-sub">写下你的话，让它随风飘过 ✨</p>
       </div>
 
-      <!-- 弹幕区域 (重写逻辑) -->
-      <div class="danmaku-wrapper" ref="danmakuContainer">
-
-        <!-- 加载中 -->
-        <div v-if="isLoading" class="loading-state">
-          <div class="spinner"></div>
-          <p>正在读取留言...</p>
+      <div class="danmaku-stage">
+        <div v-if="isLoading" class="stage-state">
+          <div class="dot-flashing"></div>
+          <p>正在加载...</p>
         </div>
-
-        <!-- 空状态 -->
-        <div v-else-if="!displayDanmus.length" class="empty-state">
-          <div class="empty-icon">📫</div>
-          <div class="empty-text">还没有留言，快来抢沙发~</div>
+        <div v-else-if="!danmuList.length" class="stage-state">
+          <p>还没有弹幕，快来写第一条吧 💌</p>
         </div>
-
-        <!-- 弹幕列表 -->
         <div
-            v-for="item in displayDanmus"
-            :key="item.id"
-            class="danmu-item"
-            :class="['track-' + item.track]"
-            :style="item.style"
+          v-for="item in danmuList"
+          :key="item.id"
+          class="danmu-bullet"
+          :style="item.style"
+          @mouseenter="item.style.animationPlayState = 'paused'"
+          @mouseleave="item.style.animationPlayState = 'running'"
         >
-          <div class="danmu-content">
-            <span class="avatar" :style="{ backgroundColor: item.avatarColor }">{{ item.text.charAt(0) }}</span>
-            <span class="text">{{ item.text }}</span>
-          </div>
+          <span class="bullet-text">{{ item.text }}</span>
         </div>
       </div>
 
-      <!-- 发送框区域 -->
-      <div class="send-section">
-        <div class="input-wrapper">
+      <div class="send-bar">
+        <div class="send-box">
           <input
-              v-model="newMessage"
-              type="text"
-              placeholder="说点好听的，万一实现了呢..."
-              maxlength="100"
-              @keyup.enter="sendDanmaku"
-              :disabled="sending"
-          >
-          <button
-              class="send-btn"
-              @click="sendDanmaku"
-              :disabled="!newMessage.trim() || sending"
-          >
-            <span v-if="!sending">发送</span>
-            <span v-else class="sending-dots">...</span>
+            v-model="newMessage"
+            class="send-input"
+            placeholder="说点什么吧..."
+            maxlength="100"
+            @keyup.enter="sendDanmaku"
+            :disabled="sending"
+          />
+          <button class="send-btn" @click="sendDanmaku" :disabled="!newMessage.trim() || sending">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+            </svg>
           </button>
         </div>
-        <div class="input-tip">
-          <span class="tip-text">💡 友善发言，传递正能量</span>
-          <span class="char-count" :class="{ 'warning': newMessage.length > 80 }">
-            {{ newMessage.length }}/100
-          </span>
-        </div>
       </div>
-
-      <!-- 自定义提示条 -->
-      <transition name="toast">
-        <div v-if="showSnackbar" class="custom-toast" :class="snackbarType">
-          <i class="icon">{{ snackbarIcon }}</i>
-          <span>{{ snackbarMessage }}</span>
-        </div>
-      </transition>
     </div>
+
+    <transition name="toast">
+      <div v-if="showSnackbar" class="custom-toast" :class="snackbarType">{{ snackbarMessage }}</div>
+    </transition>
   </div>
 </template>
 
 <script setup>
-import {ref, onMounted, onUnmounted, computed, nextTick} from 'vue';
-import request from '../utills/request.js';
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import request from '../utills/request.js'
 
-// --- 状态定义 ---
-const newMessage = ref('');
-const sending = ref(false);
-const isLoading = ref(true);
-const displayDanmus = ref([]); // 用于显示的弹幕对象数组
-const danmakuContainer = ref(null);
+const TRACK_COUNT = 7
 
-// --- 弹幕逻辑配置 ---
-const TRACK_COUNT = 6; // 轨道数量 (将屏幕高度分为几行)
-const ANIMATION_DURATION_BASE = 15; // 基础滚动时间(秒)
-const ANIMATION_DURATION_RANDOM = 10; // 随机增加的时间(秒)
+const newMessage = ref('')
+const sending = ref(false)
+const isLoading = ref(true)
+const danmuList = ref([])
+const showSnackbar = ref(false)
+const snackbarMessage = ref('')
+const snackbarType = ref('info')
 
-// --- 提示框逻辑 ---
-const showSnackbar = ref(false);
-const snackbarMessage = ref('');
-const snackbarType = ref('info');
-const snackbarIcon = computed(() => {
-  switch (snackbarType.value) {
-    case 'success':
-      return '✔';
-    case 'error':
-      return '✖';
-    case 'warning':
-      return '!';
-    default:
-      return 'ℹ';
-  }
-});
 const showMessage = (msg, type = 'info') => {
-  snackbarMessage.value = msg;
-  snackbarType.value = type;
-  showSnackbar.value = true;
-  setTimeout(() => showSnackbar.value = false, 3000);
-};
+  snackbarMessage.value = msg
+  snackbarType.value = type
+  showSnackbar.value = true
+  setTimeout(() => showSnackbar.value = false, 3000)
+}
 
-// --- 核心：处理弹幕数据 ---
-const processDanmakuData = (rawData) => {
-  // 清空现有数据
-  displayDanmus.value = [];
+const hashStr = s => {
+  let h = 0
+  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0
+  return Math.abs(h)
+}
 
-  if (!Array.isArray(rawData)) return;
+const stableId = (text, idx) => `dm-${hashStr(text)}-${idx}`
 
-  const validData = rawData
-      .map(item => typeof item === 'string' ? item : (item.message || ''))
-      .filter(text => text.trim() !== '');
+const makeBullet = (text, idx, existingTrack = null) => {
+  const hash = hashStr(idx)
+  const track = existingTrack !== null ? existingTrack : hash % TRACK_COUNT
+  const duration = 14 + (hash % 16)
+  const negativeDelay = -(hash % duration)
 
-  // 为每条弹幕生成样式属性
-  displayDanmus.value = validData.map((text, index) => {
-    // 1. 随机分配轨道 (0 ~ TRACK_COUNT-1)
-    // 为了避免相邻弹幕重叠，可以简单的轮询或者随机
-    const track = index % TRACK_COUNT;
+  return reactive({
+    id: stableId(text, idx),
+    text,
+    track,
+    style: {
+      '--dur': `${duration}s`,
+      '--delay': `${negativeDelay}s`,
+      top: `${track * 13 + 2}%`,
+      animationPlayState: 'running',
+    },
+  })
+}
 
-    // 2. 随机速度 (15s ~ 25s)
-    const duration = ANIMATION_DURATION_BASE + Math.random() * ANIMATION_DURATION_RANDOM;
-
-    // 3. 随机延迟 (0s ~ 15s)，让它们错开出现，不要一窝蜂出来
-    // 第一屏的数据需要散开，后续新增的数据延迟可以小一点
-    const delay = Math.random() * 20;
-
-    // 4. 随机头像颜色
-    const colors = ['#ff9a9e', '#a18cd1', '#fad0c4', '#ffecd2', '#84fab0', '#8fd3f4'];
-    const avatarColor = colors[Math.floor(Math.random() * colors.length)];
-
-    return {
-      id: index + Date.now(), // 唯一ID
-      text: text,
-      track: track, // 用于决定 top 位置
-      avatarColor: avatarColor,
-      style: {
-        animationDuration: `${duration}s`,
-        animationDelay: `${delay}s`,
-        top: `${(track * 12) + 5}%` // 动态计算 Top 值：例如 5%, 17%, 29%...
-      }
-    };
-  });
-};
-
-// --- API ---
-const getdanmus = async () => {
+const getMessages = async () => {
   try {
-    const response = await request.get('/message');
-    if (response.data) {
-      processDanmakuData(response.data);
-    }
-  } catch (error) {
-    console.error('获取弹幕失败', error);
+    const res = await request.get('/message')
+    let raw = []
+    if (Array.isArray(res.data)) raw = res.data
+    else if (Array.isArray(res)) raw = res
+
+    const texts = raw
+      .map(item => typeof item === 'string' ? item : (item.message || ''))
+      .filter(t => t.trim())
+
+    const newIds = new Set(texts.map((t, i) => stableId(t, i)))
+    danmuList.value = danmuList.value.filter(item => newIds.has(item.id))
+
+    const existingIds = new Set(danmuList.value.map(item => item.id))
+    texts.forEach((t, i) => {
+      if (!existingIds.has(stableId(t, i))) {
+        danmuList.value.push(makeBullet(t, stableId(t, i)))
+      }
+    })
+  } catch {
+    // ignore
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 const sendDanmaku = async () => {
-  if (!newMessage.value.trim() || sending.value) return;
+  const text = newMessage.value.trim()
+  if (!text || sending.value) return
 
-  sending.value = true;
+  sending.value = true
   try {
-    const currentTime = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    const requestData = {
-      message: newMessage.value.trim(),
-      createTime: currentTime,
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ')
+    const res = await request.post('/message/add', {
+      message: text,
+      createTime: now,
       color: '#FFFFFF',
-      act: 1
-    };
-    
-    const response = await request.post('/message/add', requestData);
-    
-    if (response.code === 0) {
-      // 发送成功后，手动将新弹幕加入到视图中
-      const newDanmu = {
-        id: Date.now(),
-        text: newMessage.value.trim(),
-        track: Math.floor(Math.random() * TRACK_COUNT), // 随机轨道
-        avatarColor: '#ff9a9e',
-        style: {
-          animationDuration: `${ANIMATION_DURATION_BASE}s`,
-          animationDelay: '0s', // 新发送的立即显示
-          top: `${(Math.floor(Math.random() * TRACK_COUNT) * 12) + 5}%`
-        }
-      };
-      displayDanmus.value.push(newDanmu);
-      
-      newMessage.value = '';
-      showMessage("发送成功，已上墙！", 'success');
-    } else {
-      showMessage(response.message || '发送失败', 'error');
-    }
-  } catch (error) {
-    showMessage('网络开小差了，稍后再试', 'error');
-  } finally {
-    sending.value = false;
-  }
-};
+      act: 1,
+    })
 
-let refreshInterval = null;
+    if (res.code === 0) {
+      const counts = Array.from({ length: TRACK_COUNT }, () => 0)
+      danmuList.value.forEach(item => { counts[item.track]++ })
+      let best = 0
+      for (let i = 1; i < TRACK_COUNT; i++) { if (counts[i] < counts[best]) best = i }
+
+      danmuList.value.push(makeBullet(text, `new-${Date.now()}`, best))
+      newMessage.value = ''
+      showMessage('发送成功 ✨', 'success')
+    } else {
+      showMessage(res.message || '发送失败', 'error')
+    }
+  } catch {
+    showMessage('网络开小差了', 'error')
+  } finally {
+    sending.value = false
+  }
+}
+
+let refreshTimer = null
 
 onMounted(() => {
-  getdanmus();
-  // 每30秒刷新一次全量数据，或者你可以改为只追加
-  refreshInterval = setInterval(getdanmus, 30000);
-});
+  getMessages()
+  refreshTimer = setInterval(getMessages, 30000)
+})
 
 onUnmounted(() => {
-  if (refreshInterval) clearInterval(refreshInterval);
-});
+  clearInterval(refreshTimer)
+})
 </script>
 
 <style scoped>
-/* 引入字体 */
-@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap');
-
-.page-wrapper {
+.danmaku-page {
   min-height: 100vh;
-  width: 100%;
   position: relative;
-  font-family: 'Fredoka', 'Noto Sans SC', sans-serif;
-  background-image: linear-gradient(120deg, #fccb90 0%, #d57eeb 100%);
+  background: linear-gradient(170deg, #fce4ec 0%, #f3e5f5 25%, #e8eaf6 50%, #e1f5fe 75%, #fce4ec 100%);
+  background-size: 400% 400%;
+  animation: bgShift 20s ease-in-out infinite;
   overflow: hidden;
-}
-
-/* 气泡背景动画保持不变 */
-.bg-bubbles {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-}
-
-.bg-bubbles li {
-  position: absolute;
-  list-style: none;
-  display: block;
-  width: 40px;
-  height: 40px;
-  background-color: rgba(255, 255, 255, 0.15);
-  bottom: -160px;
-  animation: square 25s infinite;
-  transition-timing-function: linear;
-  border-radius: 50%;
-}
-
-.bg-bubbles li:nth-child(1) {
-  left: 10%;
-  width: 80px;
-  height: 80px;
-  animation-delay: 0s;
-}
-
-.bg-bubbles li:nth-child(2) {
-  left: 20%;
-  width: 40px;
-  height: 40px;
-  animation-delay: 2s;
-  animation-duration: 17s;
-}
-
-.bg-bubbles li:nth-child(3) {
-  left: 25%;
-  animation-delay: 4s;
-}
-
-.bg-bubbles li:nth-child(4) {
-  left: 40%;
-  width: 60px;
-  height: 60px;
-  animation-duration: 22s;
-  background-color: rgba(255, 255, 255, 0.25);
-}
-
-.bg-bubbles li:nth-child(5) {
-  left: 70%;
-}
-
-@keyframes square {
-  0% {
-    transform: translateY(0);
-  }
-  100% {
-    transform: translateY(-120vh) rotate(600deg);
-  }
-}
-
-.message-container {
-  position: relative;
-  z-index: 1;
-  max-width: 1200px;
-  margin: 0 auto;
-  min-height: 100vh;
   display: flex;
-  flex-direction: column;
-  padding: 20px;
-}
-
-.message-header {
-  text-align: center;
-  padding: 40px 0 20px;
-  color: #fff;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.title {
-  font-size: 3.5rem;
-  margin: 0;
-  font-family: 'Fredoka', cursive;
-  letter-spacing: 2px;
-}
-
-.subtitle {
-  font-size: 1.2rem;
-  opacity: 0.9;
-  margin-top: 10px;
-  letter-spacing: 2px;
-}
-
-/* --- 弹幕区域核心样式 (修改部分) --- */
-.danmaku-wrapper {
-  flex: 1;
-  position: relative;
-  margin: 20px 0;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.1); /* 轻微背景让区域可见 */
-  backdrop-filter: blur(5px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  overflow: hidden; /* 关键：隐藏超出范围的弹幕 */
-  min-height: 400px;
-  /* 确保有宽度 */
-  width: 100%;
-}
-
-.danmu-item {
-  position: absolute;
-  /* 初始位置在屏幕最右侧之外 */
-  left: 100%;
-  /* 必须不换行 */
-  white-space: nowrap;
-  /* 关键动画：向左移动 */
-  animation-name: moveLeft;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite; /* 循环播放 */
-
-  /* 鼠标悬停暂停 */
-  cursor: pointer;
-  z-index: 10;
-}
-
-.danmu-item:hover {
-  animation-play-state: paused;
-  z-index: 20; /* 悬停时置顶 */
-}
-
-/* 弹幕内容样式 */
-.danmu-content {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 16px;
-  border-radius: 30px;
-  background: rgba(255, 255, 255, 0.85); /* 胶囊背景 */
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s;
-}
-
-.danmu-item:hover .danmu-content {
-  background: #fff;
-  transform: scale(1.1);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-}
-
-.avatar {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
   justify-content: center;
-  font-size: 12px;
-  color: #fff;
-  font-weight: bold;
 }
 
-.text {
-  color: #333;
-  font-size: 15px;
+@keyframes bgShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* ---- 漂浮色块 ---- */
+.bg-blob {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.25;
+  pointer-events: none;
+}
+.bg-blob-1 {
+  width: 350px; height: 350px;
+  background: #f8bbd0;
+  top: -80px; right: -60px;
+  animation: blobA 10s ease-in-out infinite;
+}
+.bg-blob-2 {
+  width: 280px; height: 280px;
+  background: #b3e5fc;
+  bottom: -60px; left: -40px;
+  animation: blobB 12s ease-in-out infinite;
+}
+.bg-blob-3 {
+  width: 220px; height: 220px;
+  background: #c5e1a5;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  animation: blobC 14s ease-in-out infinite;
+}
+@keyframes blobA {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-30px, 40px) scale(1.15); }
+}
+@keyframes blobB {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(40px, -20px) scale(1.1); }
+}
+@keyframes blobC {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.2); }
+}
+
+/* ---- 布局 ---- */
+.danmaku-layout {
+  position: relative; z-index: 1; width: 100%; max-width: 900px;
+  display: flex; flex-direction: column; min-height: 100vh; padding: 20px;
+}
+
+/* ---- 头部 ---- */
+.danmaku-header {
+  text-align: center; padding: 40px 0 14px;
+}
+.header-title {
+  font-size: 2rem; font-weight: 700; margin: 0 0 8px;
+  background: linear-gradient(135deg, #e91e63, #9c27b0, #3f51b5);
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent;
+}
+.header-sub {
+  font-size: 0.9rem; color: rgba(0,0,0,0.3); margin: 0;
+}
+
+/* ---- 舞台 ---- */
+.danmaku-stage {
+  flex: 1; position: relative; margin: 10px 0 90px;
+  border-radius: 24px;
+  background: rgba(255,255,255,0.25);
+  border: 1px solid rgba(255,255,255,0.4);
+  backdrop-filter: blur(10px);
+  overflow: hidden; min-height: 420px;
+}
+
+.stage-state {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; color: rgba(0,0,0,0.25);
+}
+
+/* ---- 弹幕条 ---- */
+.danmu-bullet {
+  position: absolute;
+  left: 100%;
+  white-space: nowrap;
+  padding: 7px 20px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,0.7);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+  cursor: default;
+  transition: box-shadow 0.25s, background 0.25s, transform 0.25s;
+  animation: bulletFly var(--dur, 18s) linear var(--delay, 0s) infinite;
+}
+
+.danmu-bullet:hover {
+  background: rgba(255,255,255,0.9);
+  border-color: rgba(255,255,255,0.95);
+  box-shadow: 0 4px 20px rgba(233, 30, 99, 0.12), 0 0 30px rgba(156, 39, 176, 0.08);
+  transform: scale(1.04);
+}
+
+.bullet-text {
+  font-size: 14px;
+  color: #555;
   font-weight: 500;
 }
 
-/* 关键动画定义 */
-@keyframes moveLeft {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    /* 移动到屏幕左侧之外，-100%是自身宽度，再减去视口宽度的一点冗余 */
-    transform: translateX(calc(-100vw - 100%));
-  }
+@keyframes bulletFly {
+  from { transform: translateX(0); }
+  to   { transform: translateX(calc(-100vw - 100%)); }
 }
 
-/* 状态提示 */
-.loading-state, .empty-state {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: rgba(255, 255, 255, 0.8);
-  text-align: center;
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  border-top-color: #fff;
+/* ---- 加载 ---- */
+.dot-flashing {
+  position: relative;
+  width: 8px; height: 8px;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 10px;
+  background: rgba(156, 39, 176, 0.4);
+  animation: dotFlashing 1s infinite linear alternate;
+  animation-delay: 0.5s;
+}
+.dot-flashing::before, .dot-flashing::after {
+  content: ''; position: absolute; top: 0; width: 8px; height: 8px;
+  border-radius: 50%; background: rgba(156, 39, 176, 0.4);
+}
+.dot-flashing::before { left: -15px; animation: dotFlashing 1s infinite alternate; animation-delay: 0s; }
+.dot-flashing::after { left: 15px; animation: dotFlashing 1s infinite alternate; animation-delay: 1s; }
+@keyframes dotFlashing {
+  0% { background: rgba(156, 39, 176, 0.25); }
+  100% { background: rgba(156, 39, 176, 0.5); }
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+/* ---- 发送栏 ---- */
+.send-bar {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  z-index: 10; width: 90%; max-width: 520px;
 }
-
-/* --- 发送框样式 (保持一致) --- */
-.send-section {
-  width: 100%;
-  max-width: 700px;
-  margin: 0 auto 40px;
-}
-
-.input-wrapper {
+.send-box {
   display: flex;
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255,255,255,0.6);
   backdrop-filter: blur(20px);
-  border-radius: 50px;
-  padding: 5px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  transition: all 0.3s;
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 28px; overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  transition: border-color 0.3s, box-shadow 0.3s;
 }
-
-.input-wrapper:focus-within {
-  background: #fff;
-  transform: translateY(-2px);
-  border-color: #fff;
+.send-box:focus-within {
+  border-color: rgba(233, 30, 99, 0.2);
+  box-shadow: 0 4px 24px rgba(233, 30, 99, 0.08);
 }
-
-.input-wrapper input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  padding: 15px 25px;
-  font-size: 1.1rem;
-  color: #555;
-  outline: none;
+.send-input {
+  flex: 1; background: transparent; border: none; padding: 13px 20px;
+  font-size: 14px; color: #555; outline: none; font-family: inherit;
 }
-
+.send-input::placeholder { color: rgba(0,0,0,0.2); }
 .send-btn {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  color: white;
-  border: none;
-  border-radius: 40px;
-  padding: 0 35px;
-  font-weight: 600;
-  cursor: pointer;
-  min-width: 100px;
-  transition: all 0.3s;
-  margin: 3px;
+  width: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #f48fb1, #ce93d8); border: none;
+  color: #fff; cursor: pointer; transition: all 0.3s;
 }
+.send-btn:hover:not(:disabled) { background: linear-gradient(135deg, #f06292, #ba68c8); }
+.send-btn:active:not(:disabled) { transform: scale(0.92); }
+.send-btn:disabled { background: rgba(0,0,0,0.05); color: rgba(0,0,0,0.15); cursor: not-allowed; }
 
-.send-btn:hover:not(:disabled) {
-  transform: scale(1.05);
-}
-
-.send-btn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
-.input-tip {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px 20px;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.9rem;
-}
-
-/* Toast */
+/* ---- Toast ---- */
 .custom-toast {
-  position: fixed;
-  top: 30px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #fff;
-  padding: 12px 25px;
-  border-radius: 50px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  z-index: 9999;
-  font-weight: 600;
-  color: #555;
+  position: fixed; top: 28px; left: 50%; transform: translateX(-50%);
+  padding: 9px 22px; border-radius: 20px; font-size: 13px; font-weight: 600; z-index: 9999;
+  background: rgba(255,255,255,0.9); backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.6); color: #666;
 }
+.toast-enter-active, .toast-leave-active { transition: all 0.35s ease; }
+.toast-enter-from, .toast-leave-to { opacity: 0; transform: translate(-50%, -20px); }
 
-.custom-toast.success .icon {
-  color: #4caf50;
-}
-
-.custom-toast.error .icon {
-  color: #ff5252;
-}
-
-.toast-enter-active, .toast-leave-active {
-  transition: all 0.4s;
-}
-
-.toast-enter-from, .toast-leave-to {
-  opacity: 0;
-  transform: translate(-50%, -30px);
-}
-
-/* 移动端适配 */
 @media (max-width: 768px) {
-  .title {
-    font-size: 2.5rem;
-  }
-
-  .danmaku-wrapper {
-    min-height: 300px;
-  }
-
-  .danmu-content {
-    padding: 4px 12px;
-    font-size: 13px;
-  }
-
-  .input-wrapper {
-    flex-direction: column;
-    border-radius: 20px;
-    padding: 10px;
-  }
-
-  .send-btn {
-    width: 100%;
-    padding: 12px 0;
-    border-radius: 15px;
-    margin-top: 10px;
-  }
+  .header-title { font-size: 1.5rem; }
+  .danmaku-stage { min-height: 300px; }
+  .danmu-bullet { padding: 5px 14px; }
+  .bullet-text { font-size: 13px; }
+  .send-bar { width: 95%; bottom: 12px; }
 }
 </style>
